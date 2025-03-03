@@ -3,7 +3,7 @@ name: Build Docker image and deploy to Kubernetes cluster
 on:
   push:
     branches:
-      - master
+      - TECH-4523-ajna-keeper-service
   
 permissions:
   id-token: write
@@ -66,6 +66,7 @@ jobs:
         run: |
           echo "Replacing {{CLUSTER_NAME}} with ${CLUSTER_NAME} in config files"
           sed -i "s/{{CLUSTER_NAME}}/${CLUSTER_NAME}/g" deploy/staging/ajna-keeper.yaml
+          cat deploy/staging/ajna-keeper.yaml
 
       - name: Deploying app to Kubernetes with Helm
         uses: bitovi/github-actions-deploy-eks-helm@v1.2.9
