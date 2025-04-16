@@ -10,27 +10,24 @@ import { handleKicks } from './kick';
 import { handleTakes } from './take';
 import { collectBondFromPool } from './collect-bond';
 import { LpCollector } from './collect-lp';
-import { logger, logAlert, logWarning, AlertSeverity, setLoggerConfig } from './logging';
+import { logger, logAlert, logWarning, AlertSeverity, setLoggerConfig, logOperation } from './logging';
 import { RewardActionTracker } from './reward-action-tracker';
 import { DexRouter } from './dex-router';
-import { metricsService } from './metrics';
 
 type PoolMap = Map<string, FungiblePool>;
 
 // Extend KeeperConfig with optional metrics configuration
 interface ExtendedKeeperConfig extends KeeperConfig {
-  enableMetrics?: boolean;
-  metricsPort?: number;
+  logLevel?: string;
 }
 
 export async function startKeeperFromConfig(config: KeeperConfig) {
-  // Cast to extended config to handle optional metrics properties
+  // Cast to extended config to handle optional properties
   const extendedConfig = config as ExtendedKeeperConfig;
   
-  // Initialize logger and metrics
+  // Initialize logger
   setLoggerConfig({
-    logLevel: extendedConfig.logLevel || 'debug',
-    enableMetrics: extendedConfig.enableMetrics !== false
+    logLevel: extendedConfig.logLevel || 'debug'
   });
 
   const { provider, signer } = await getProviderAndSigner(
@@ -57,14 +54,20 @@ async function getPoolsFromConfig(
     const name: string = pool.name ?? '(unnamed)';
     logger.info(`loading pool ${name.padStart(18)} at ${pool.address}`);
     try {
-      const endTimer = metricsService.startTimer('pool_loading', pool.address);
+      const startTime = Date.now();
       const fungiblePool = await ajna.fungiblePoolFactory.getPoolByAddress(
         pool.address
       );
       // TODO: Should this be a per-pool multicall?
       overrideMulticall(fungiblePool, config);
       pools.set(pool.address, fungiblePool);
-      endTimer();
+      
+      // Log operation duration
+      const duration = Date.now() - startTime;
+      logOperation('pool_loading', duration, {
+        poolAddress: pool.address,
+        poolName: name
+      });
     } catch (error) {
       logAlert(`Failed to load pool ${name} at ${pool.address}`, AlertSeverity.HIGH, {
         poolAddress: pool.address,
@@ -89,14 +92,21 @@ async function kickPoolsLoop({ poolMap, config, signer }: KeepPoolParams) {
     for (const poolConfig of poolsWithKickSettings) {
       const pool = poolMap.get(poolConfig.address)!;
       try {
-        const endTimer = metricsService.startTimer('kick_handling', poolConfig.address);
+        const startTime = Date.now();
         await handleKicks({
           pool,
           poolConfig,
           signer,
           config,
         });
-        endTimer();
+        
+        // Log operation duration
+        const duration = Date.now() - startTime;
+        logOperation('kick_handling', duration, {
+          poolAddress: poolConfig.address,
+          poolName: pool.name
+        });
+        
         await delay(config.delayBetweenActions);
       } catch (error) {
         logAlert(`Failed to handle kicks for pool: ${pool.name}`, AlertSeverity.HIGH, {
@@ -131,7 +141,14 @@ async function takePoolsLoop({ poolMap, config, signer }: KeepPoolParams) {
           signer,
           config,
         });
-        endTimer();
+        
+        // Log operation duration
+        const duration = Date.now() - startTime;
+        logOperation('arb_take_handling', duration, {
+          poolAddress: poolConfig.address,
+          poolName: pool.name
+        });
+        
         await delay(config.delayBetweenActions);
       } catch (error) {
         logAlert(`Failed to handle arb take for pool: ${pool.name}`, AlertSeverity.HIGH, {
@@ -160,9 +177,16 @@ async function collectBondLoop({ poolMap, config, signer }: KeepPoolParams) {
     for (const poolConfig of poolsWithCollectBondSettings) {
       const pool = poolMap.get(poolConfig.address)!;
       try {
-        const endTimer = metricsService.startTimer('bond_collection', poolConfig.address);
+        const startTime = Date.now();
         await collectBondFromPool({ pool, signer, config });
-        endTimer();
+        
+        // Log operation duration
+        const duration = Date.now() - startTime;
+        logOperation('bond_collection', duration, {
+          poolAddress: poolConfig.address,
+          poolName: pool.name
+        });
+        
         await delay(config.delayBetweenActions);
       } catch (error) {
         logAlert(`Failed to collect bond from pool: ${pool.name}`, AlertSeverity.MEDIUM, {
@@ -197,7 +221,7 @@ async function collectLpRewardsLoop({
   for (const poolConfig of poolsWithCollectLpSettings) {
     const pool = poolMap.get(poolConfig.address)!;
     try {
-      const endTimer = metricsService.startTimer('lp_collector_init', poolConfig.address);
+      const startTime = Date.now();
       const collector = new LpCollector(
         pool,
         signer,
@@ -207,7 +231,13 @@ async function collectLpRewardsLoop({
       );
       lpCollectors.set(poolConfig.address, collector);
       await collector.startSubscription();
-      endTimer();
+      
+      // Log operation duration
+      const duration = Date.now() - startTime;
+      logOperation('lp_collector_init', duration, {
+        poolAddress: poolConfig.address,
+        poolName: pool.name
+      });
     } catch (error) {
       logAlert(`Failed to start LP collector for pool: ${pool.name}`, AlertSeverity.HIGH, {
         poolAddress: poolConfig.address,
@@ -222,9 +252,17 @@ async function collectLpRewardsLoop({
     for (const poolConfig of poolsWithCollectLpSettings) {
       const collector = lpCollectors.get(poolConfig.address)!;
       try {
-        const endTimer = metricsService.startTimer('lp_reward_collection', poolConfig.address);
+        const startTime = Date.now();
         await collector.collectLpRewards();
-        endTimer();
+        
+        // Log operation duration
+        const duration = Date.now() - startTime;
+        const pool = poolMap.get(poolConfig.address)!;
+        logOperation('lp_reward_collection', duration, {
+          poolAddress: poolConfig.address,
+          poolName: pool.name
+        });
+        
         await delay(config.delayBetweenActions);
       } catch (error) {
         const pool = poolMap.get(poolConfig.address)!;
@@ -237,9 +275,12 @@ async function collectLpRewardsLoop({
       }
     }
     try {
-      const endTimer = metricsService.startTimer('token_exchange', 'all');
+      const startTime = Date.now();
       await exchangeTracker.handleAllTokens();
-      endTimer();
+      
+      // Log operation duration
+      const duration = Date.now() - startTime;
+      logOperation('token_exchange', duration, {});
     } catch (error) {
       logAlert(`Failed to exchange tokens`, AlertSeverity.MEDIUM, {
         errorMessage: error instanceof Error ? error.message : String(error),

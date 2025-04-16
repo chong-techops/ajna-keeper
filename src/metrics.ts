@@ -53,6 +53,12 @@ export class MetricsService {
       labelNames: ['operation', 'pool_address'],
       buckets: [0.1, 0.5, 1, 2, 5, 10, 30, 60]
     });
+    
+    // Enable default metrics collection
+    register.setDefaultLabels({
+      app: 'ajna-keeper'
+    });
+    register.collectDefaultMetrics();
   }
 
   /**
@@ -65,9 +71,17 @@ export class MetricsService {
 
     // Create HTTP server for Prometheus to scrape
     this.server = createServer(async (req, res) => {
+      // Add CORS headers for Grafana
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET');
+      
       if (req.url === '/metrics') {
         res.setHeader('Content-Type', register.contentType);
         res.end(await register.metrics());
+      } else if (req.url === '/health' || req.url === '/healthz') {
+        // Add health endpoint for Kubernetes probes
+        res.statusCode = 200;
+        res.end('OK');
       } else {
         res.statusCode = 404;
         res.end('Not found');

@@ -1,6 +1,5 @@
 import { createLogger, transports, LogEntry, Logger, format } from 'winston';
 import Transport, { TransportStreamOptions } from 'winston-transport';
-import { metricsService } from './metrics';
 
 // FIXME: this always writes a log folder in the module location, which is not always desirable
 const LOGS_FOLDER = 'logs';
@@ -95,50 +94,57 @@ function createCustomLogger(logLevel: string = 'debug'): Logger {
 
 export let logger: Logger = createCustomLogger('debug');
 
-export function setLoggerConfig(config: { logLevel?: string; enableMetrics?: boolean }) {
+export function setLoggerConfig(config: { logLevel?: string }) {
   logger = createCustomLogger(config.logLevel || 'debug');
-  
-  // Initialize metrics server if enabled
-  if (config.enableMetrics) {
-    metricsService.initialize();
-  }
 }
 
 // Helper functions for logging alertable events
 export function logAlert(message: string, severity: AlertSeverity, metadata: Record<string, any> = {}) {
+  // Add timestamp in ISO format for better Grafana parsing
+  const timestamp = new Date().toISOString();
+  
   logger.error(message, { 
     ...metadata, 
     alertSeverity: severity,
-    alertable: true
+    alertable: true,
+    timestamp,
+    event_type: 'critical_event',
+    // Add standardized fields for Grafana
+    component: metadata.component || 'unknown',
+    pool_address: metadata.poolAddress || 'none',
+    pool_name: metadata.poolName || metadata.pool?.name || 'unknown',
+    error_message: metadata.errorMessage || ''
   });
-  
-  // Send metrics for alertable events
-  if (metadata.component) {
-    metricsService.recordAlert(
-      severity, 
-      metadata.component, 
-      metadata.poolAddress, 
-      metadata.poolName || (metadata.pool?.name)
-    );
-  }
 }
 
 export function logWarning(message: string, severity: AlertSeverity = AlertSeverity.MEDIUM, metadata: Record<string, any> = {}) {
+  // Add timestamp in ISO format for better Grafana parsing
+  const timestamp = new Date().toISOString();
+  
   logger.warn(message, { 
     ...metadata, 
     alertSeverity: severity,
-    alertable: true
+    alertable: true,
+    timestamp,
+    event_type: 'warning_event',
+    // Add standardized fields for Grafana
+    component: metadata.component || 'unknown',
+    pool_address: metadata.poolAddress || 'none',
+    pool_name: metadata.poolName || metadata.pool?.name || 'unknown',
+    error_message: metadata.errorMessage || ''
   });
-  
-  // Send metrics for warning events
-  if (metadata.component) {
-    metricsService.recordAlert(
-      severity, 
-      metadata.component, 
-      metadata.poolAddress, 
-      metadata.poolName || (metadata.pool?.name)
-    );
-  }
+}
+
+export function logOperation(operation: string, durationMs: number, metadata: Record<string, any> = {}) {
+  // Log operation performance for tracking in Grafana
+  logger.info(`Operation completed: ${operation}`, {
+    operation,
+    duration_ms: durationMs,
+    event_type: 'operation_metric',
+    timestamp: new Date().toISOString(),
+    pool_address: metadata.poolAddress || 'none',
+    pool_name: metadata.poolName || metadata.pool?.name || 'unknown'
+  });
 }
 
 export function setLogsFolderPermissions() {}
