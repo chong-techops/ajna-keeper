@@ -3,7 +3,7 @@ name: Build Docker image and deploy to Kubernetes cluster
 on:
   push:
     branches:
-      - master
+      - TECH-4523-ajna-keeper-service
   
 permissions:
   id-token: write
@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
-      AWS_REGION: us-east-2
-      ECR_REPOSITORY: ajna-keeper-staging
+      AWS_REGION: us-east-1
+      ECR_REPOSITORY: ajna-keeper-production
       CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
       NETWORK_NAME: ${{ secrets.NETWORK_NAME }}
 
@@ -27,7 +27,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.GA_OIDC_EKS_STAGING }}
+          role-to-assume: ${{ secrets.GA_OIDC_EKS_PRODUCTION }}
           role-session-name: AjnaKeeper
           aws-region: ${{ env.AWS_REGION }}
 
@@ -47,7 +47,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           SHA_TAG: ${{ steps.vars.outputs.sha_short }}
           LATEST_TAG: latest
-          ENVIRONMENT_TAG: staging
+          ENVIRONMENT_TAG: production
         run: |
           # Build a docker container and push it to ECR
           echo "Building image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${SHA_TAG}"
@@ -66,12 +66,12 @@ jobs:
       - name: Replace placeholders in config files
         run: |
           echo "Replacing {{CLUSTER_NAME}} with ${CLUSTER_NAME} in config files"
-          sed -i "s/{{CLUSTER_NAME}}/${CLUSTER_NAME}/g" deploy/staging/ajna-keeper.yaml
-          sed -i "s/{{CLUSTER_NAME}}/${CLUSTER_NAME}/g" deploy/staging/ajna-subgraph.yaml
+          sed -i "s/{{CLUSTER_NAME}}/${CLUSTER_NAME}/g" deploy/production/ajna-keeper.yaml
+          sed -i "s/{{CLUSTER_NAME}}/${CLUSTER_NAME}/g" deploy/production/ajna-subgraph.yaml
           
           echo "Replacing {{NETWORK_NAME}} with ${NETWORK_NAME} in config files"
-          sed -i "s/{{NETWORK_NAME}}/${NETWORK_NAME}/g" deploy/staging/ajna-keeper.yaml
-          sed -i "s/{{NETWORK_NAME}}/${NETWORK_NAME}/g" deploy/staging/ajna-subgraph.yaml
+          sed -i "s/{{NETWORK_NAME}}/${NETWORK_NAME}/g" deploy/production/ajna-keeper.yaml
+          sed -i "s/{{NETWORK_NAME}}/${NETWORK_NAME}/g" deploy/production/ajna-subgraph.yaml
 
       - name: Update kubeconfig for EKS cluster
         run: |
@@ -81,7 +81,7 @@ jobs:
       - name: Deploy subgraph to Kubernetes
         run: |
           echo "Deploying subgraph infrastructure to Kubernetes"
-          kubectl apply -f deploy/staging/ajna-subgraph.yaml -n ajna
+          kubectl apply -f deploy/production/ajna-subgraph.yaml -n ajna
           
           # Wait for all required pods to be ready
           echo "Waiting for graph-node deployment to be ready..."
@@ -158,7 +158,7 @@ jobs:
         with:
           values: image.repository=${{ steps.build-image.outputs.image }},image.tag=${{ steps.build-image.outputs.tag }}
           cluster-name: ${{ env.CLUSTER_NAME }}
-          config-files: deploy/staging/ajna-keeper.yaml
+          config-files: deploy/production/ajna-keeper.yaml
           chart-path: techops-services/common
           namespace: ajna
           timeout: 5m0s
