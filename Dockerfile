@@ -15,6 +15,7 @@ RUN yarn install
 
 # Copy the rest of the application
 COPY . .
+RUN yarn compile
 
 # Make scripts executable
 RUN chmod +x /app/docker-entrypoint.sh
