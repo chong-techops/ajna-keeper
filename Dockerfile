@@ -5,7 +5,11 @@ FROM node:22-alpine
 WORKDIR /app
 
 # Install system dependencies
-RUN apk add --no-cache git
+RUN apk add --no-cache git openssh-client
+
+# Setup SSH for GitHub
+RUN mkdir -p /root/.ssh \
+    && echo "Host github.com\n\tStrictHostKeyChecking no\n" > /root/.ssh/config
 
 # Copy package files
 COPY package.json yarn.lock ./
