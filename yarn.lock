@@ -1769,7 +1769,7 @@ escape-string-regexp@^4.0.0:
 
 "ethcall@git+https://github.com/imbaniac/ethcall.git#base":
   version "4.8.13"
-  resolved "git+ssh://git@github.com/imbaniac/ethcall.git#84482231e36efa3796aaab9ed0fa1a3c332a07ee"
+  resolved "git+https://github.com/imbaniac/ethcall.git#84482231e36efa3796aaab9ed0fa1a3c332a07ee"
   dependencies:
     "@ethersproject/abi" "^5.0.0"
     "@ethersproject/bytes" "^5.0.0"
