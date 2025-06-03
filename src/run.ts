@@ -1,4 +1,4 @@
-import { AjnaSDK, FungiblePool, Signer } from '@ajna-finance/sdk';
+import { AjnaSDK, FungiblePool } from '@ajna-finance/sdk';
 import { configureAjna, KeeperConfig, PoolConfig, validateTakeSettings } from './config-types';
 import {
   delay,
@@ -11,7 +11,7 @@ import { handleTakes } from './take';
 import { collectBondFromPool } from './collect-bond';
 import { LpCollector } from './collect-lp';
 import { logger, logAlert, logWarning, AlertSeverity, setLoggerConfig, logOperation } from './logging';
-import { metricsService } from './metrics';
+// Remove this line: import { metricsService } from './metrics';
 import { RewardActionTracker } from './reward-action-tracker';
 import { DexRouter } from './dex-router';
 
@@ -31,8 +31,7 @@ export async function startKeeperFromConfig(config: KeeperConfig) {
     logLevel: extendedConfig.logLevel || 'debug'
   });
 
-  // Initialize metrics service
-  metricsService.initialize();
+  // Remove this line: metricsService.initialize();
 
   const { provider, signer } = await getProviderAndSigner(
     config.keeperKeystore,
@@ -139,7 +138,8 @@ async function takePoolsLoop({ poolMap, config, signer }: KeepPoolParams) {
       try {
         validateTakeSettings(poolConfig.take, config);
         const startTime = Date.now();
-        const endTimer = metricsService.startTimer('arb_take_handling', poolConfig.address);
+        // Remove this line: const endTimer = metricsService.startTimer('arb_take_handling', poolConfig.address);
+        // Keep your existing take handling logic without the timer
         await handleTakes({
           pool,
           poolConfig,
