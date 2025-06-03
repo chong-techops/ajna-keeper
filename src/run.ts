@@ -11,13 +11,14 @@ import { handleTakes } from './take';
 import { collectBondFromPool } from './collect-bond';
 import { LpCollector } from './collect-lp';
 import { logger, logAlert, logWarning, AlertSeverity, setLoggerConfig, logOperation } from './logging';
+import { metricsService } from './metrics';
 import { RewardActionTracker } from './reward-action-tracker';
 import { DexRouter } from './dex-router';
 
 type PoolMap = Map<string, FungiblePool>;
 
-// Extend KeeperConfig with optional metrics configuration
-interface ExtendedKeeperConfig extends KeeperConfig {
+// Extend KeeperConfig with additional configuration
+interface ExtendedKeeperConfig extends Omit<KeeperConfig, 'logLevel'> {
   logLevel?: string;
 }
 
@@ -29,6 +30,9 @@ export async function startKeeperFromConfig(config: KeeperConfig) {
   setLoggerConfig({
     logLevel: extendedConfig.logLevel || 'debug'
   });
+
+  // Initialize metrics service
+  metricsService.initialize();
 
   const { provider, signer } = await getProviderAndSigner(
     config.keeperKeystore,
@@ -134,6 +138,7 @@ async function takePoolsLoop({ poolMap, config, signer }: KeepPoolParams) {
       const pool = poolMap.get(poolConfig.address)!;
       try {
         validateTakeSettings(poolConfig.take, config);
+        const startTime = Date.now();
         const endTimer = metricsService.startTimer('arb_take_handling', poolConfig.address);
         await handleTakes({
           pool,
