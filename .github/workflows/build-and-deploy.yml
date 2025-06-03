@@ -3,7 +3,7 @@ name: Build Docker image and deploy to Kubernetes cluster
 on:
   push:
     branches:
-      - TECH-4997-hemi-network-setup
+      - TECH-4808-ajna-keeper-metrics
   
 permissions:
   id-token: write
