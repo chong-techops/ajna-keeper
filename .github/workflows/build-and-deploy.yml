@@ -104,7 +104,7 @@ jobs:
           # Start port-forward for graph-node in background and capture PID
           echo "Starting port-forward for graph-node..."
           GRAPH_NODE_POD=$(kubectl get pods -n ajna -l app=${NETWORK_NAME}-graph-node -o jsonpath='{.items[0].metadata.name}')
-          kubectl port-forward -n ajna pod/$GRAPH_NODE_POD 8000:8000 8020:8020 &
+          kubectl port-forward -n ajna pod/$GRAPH_NODE_POD 8020:8020 &
           GRAPH_NODE_PID=$!
           
           # Start port-forward for IPFS in background and capture PID
@@ -137,7 +137,7 @@ jobs:
           
           # Check if graph-node is accessible
           echo "Checking if graph-node is accessible..."
-          if curl -s http://localhost:8000/graphql > /dev/null; then
+          if curl -s http://localhost:8020 > /dev/null; then
             echo "Graph node is accessible, deploying subgraph..."
             # Create and deploy subgraph
             yarn create-local || echo "Subgraph may already exist, continuing..."
