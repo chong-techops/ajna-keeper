@@ -51,6 +51,8 @@ spec:
     metadata:
       labels:
         app: {{NETWORK_NAME}}-postgres
+      annotations:
+        karpenter.sh/do-not-disrupt: "true"
     spec:
       containers:
       - name: postgres
@@ -123,6 +125,8 @@ spec:
     metadata:
       labels:
         app: {{NETWORK_NAME}}-ipfs
+      annotations:
+        karpenter.sh/do-not-disrupt: "true"
     spec:
       containers:
       - name: ipfs
@@ -184,6 +188,8 @@ spec:
     metadata:
       labels:
         app: {{NETWORK_NAME}}-graph-node
+      annotations:
+        karpenter.sh/do-not-disrupt: "true"
     spec:
       containers:
       - name: graph-node
