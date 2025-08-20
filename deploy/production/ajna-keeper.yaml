@@ -48,10 +48,14 @@ env:
   KEEPER_KEYSTORE:
     type: "kv"
     value: "/app/keystores/keeper-keystore.json"
-  CONF_GENERIC:
+  CONF_BASE:
     type: "parameterStore"
-    name: "conf-generic"
-    parameter_name: /eks/{{CLUSTER_NAME}}/ajna-keeper/{{NETWORK_NAME}}/configuration
+    name: "conf-base"
+    parameter_name: /eks/{{CLUSTER_NAME}}/ajna-keeper/{{NETWORK_NAME}}/configuration-base
+  CONF_POOLS:
+    type: "parameterStore"
+    name: "conf-pools"
+    parameter_name: /eks/{{CLUSTER_NAME}}/ajna-keeper/{{NETWORK_NAME}}/configuration-pools
   KEYSTORE_FILE:
     type: "parameterStore"
     name: "keystore-file"

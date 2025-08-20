@@ -22,15 +22,31 @@ EOF
 
 echo ".env file generated at /app/.env"
 
-# Generate the conf.ts file from CONF_GENERIC
-if [ -z "$CONF_GENERIC" ]; then
-    echo "ERROR: CONF_GENERIC is not provided. Cannot continue without configuration."
+# Generate the conf.ts file from CONF_BASE and CONF_POOLS
+if [ -z "$CONF_BASE" ] || [ -z "$CONF_POOLS" ]; then
+    echo "ERROR: CONF_BASE and CONF_POOLS are required. Cannot continue without configuration."
     exit 1
 fi
 
-echo "Generating conf.ts from generic configuration..."
-echo "$CONF_GENERIC" > /app/conf.ts
-echo "Generic configuration file generated at /app/conf.ts"
+echo "Generating conf.ts from split configuration..."
+
+# Create the combined configuration file
+cat > /app/conf.ts << EOF
+import { KeeperConfig } from './src/config-types';
+
+const baseConfig = $CONF_BASE;
+
+const poolsConfig = $CONF_POOLS;
+
+const config: KeeperConfig = {
+  ...baseConfig,
+  pools: poolsConfig,
+};
+
+export default config;
+EOF
+
+echo "Combined configuration file generated at /app/conf.ts"
 
 # Check if KEYSTORE_PASSWORD is set (even if empty)
 if [ "${KEYSTORE_PASSWORD+x}" = "x" ]; then
