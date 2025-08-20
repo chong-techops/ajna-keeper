@@ -32,15 +32,19 @@ echo "Generating conf.ts from split configuration..."
 
 # Create the combined configuration file
 cat > /app/conf.ts << EOF
-import { KeeperConfig } from './src/config-types';
-
-const baseConfig = $CONF_BASE;
-
-const poolsConfig = $CONF_POOLS;
+import {
+  KeeperConfig,
+  RewardActionLabel,
+  PriceOriginSource,
+  TokenToCollect,
+  LiquiditySource,
+  PostAuctionDex,
+} from './src/config-types';
+import { FeeAmount } from '@uniswap/v3-sdk';
 
 const config: KeeperConfig = {
-  ...baseConfig,
-  pools: poolsConfig,
+  $CONF_BASE,
+  pools: $CONF_POOLS,
 };
 
 export default config;
