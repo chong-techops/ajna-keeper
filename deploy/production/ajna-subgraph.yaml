@@ -88,14 +88,9 @@ spec:
           limits:
             memory: "2Gi"
             cpu: "1000m"
-  volumeClaimTemplates:
-  - metadata:
-      name: postgres-data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 10Gi
+      volumes:
+      - name: postgres-data
+        emptyDir: {}
 ---
 # PostgreSQL Service
 apiVersion: v1
@@ -142,20 +137,7 @@ spec:
             cpu: "500m"
       volumes:
       - name: ipfs-data
-        persistentVolumeClaim:
-          claimName: {{NETWORK_NAME}}-ipfs-data
----
-# IPFS PVC
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{NETWORK_NAME}}-ipfs-data
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
+        emptyDir: {}
 ---
 # IPFS Service
 apiVersion: v1
