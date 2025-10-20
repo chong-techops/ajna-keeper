@@ -36,13 +36,12 @@ spec:
       remoteRef:
         key: /eks/{{CLUSTER_NAME}}/ajna-subgraph/{{NETWORK_NAME}}/eth-network
 ---
-# PostgreSQL StatefulSet
+# PostgreSQL Deployment
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: {{NETWORK_NAME}}-postgres
 spec:
-  serviceName: {{NETWORK_NAME}}-postgres
   replicas: 1
   selector:
     matchLabels:
