@@ -79,7 +79,7 @@ jobs:
           aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${AWS_REGION}
 
       - name: Deploy subgraph to Kubernetes
-        if: false  # Set to true to enable subgraph deployment
+        if: true  # Set to true to enable subgraph deployment
         run: |
           echo "Deploying subgraph infrastructure to Kubernetes"
           kubectl apply -f deploy/production/ajna-subgraph.yaml -n ajna
