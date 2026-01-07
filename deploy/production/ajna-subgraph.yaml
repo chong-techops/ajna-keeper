@@ -93,9 +93,10 @@ spec:
       name: postgres-data
     spec:
       accessModes: [ "ReadWriteOnce" ]
+      storageClassName: gp3
       resources:
         requests:
-          storage: 10Gi
+          storage: 20Gi
 ---
 # PostgreSQL Service
 apiVersion: v1
