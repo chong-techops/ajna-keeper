@@ -34,13 +34,9 @@ echo "Generating conf.ts from split configuration..."
 cat > /app/conf.ts << EOF
 import {
   KeeperConfig,
-  RewardActionLabel,
   PriceOriginSource,
-  TokenToCollect,
-  LiquiditySource,
-  PostAuctionDex,
+  PriceOriginPoolReference,
 } from './src/config-types';
-import { FeeAmount } from '@uniswap/v3-sdk';
 
 const config: KeeperConfig = {
   $CONF_BASE,
